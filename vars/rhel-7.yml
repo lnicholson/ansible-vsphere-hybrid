@@ -1,0 +1,3 @@
+## Variables file to translate OS choices in the survey to image choices in the Vsphere platform.
+image_name: rhel7-img
+cloud_os: linux
