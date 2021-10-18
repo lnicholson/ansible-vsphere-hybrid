@@ -1,0 +1,13 @@
+#group_vars/vsphere_m1.large.yml
+#vSphere isn't cloud friendly at all.  Need this vars file to
+#match common cloud sizing to set the Vmware module with values
+#per the common criteria for Cloud platforms.
+
+#m1.large
+---
+vm_cpu: 4
+vm_disk_size: 80
+vm_ram: 8192
+vm_datastore: Quantastor
+vm_disk_type: thin
+vm_datacenter: ATL
