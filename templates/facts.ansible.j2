@@ -1,0 +1,8 @@
+$automation = [PSCustomObject]@{
+
+    machine_class = "{{ machine_class }}"
+    env = "{{ env }}"
+    site = "{{ site }}"
+}
+
+Write-Output $automation
