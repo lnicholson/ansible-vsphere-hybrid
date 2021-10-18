@@ -1,0 +1,5 @@
+#vars/vsphere_windows.yml
+#This vars file is just to populate variables that are specific
+#to Windows machines running on Vsphere.
+conf_callback_job_id: '65'
+conf_callback_uuid: '2a7288ca-c3ec-4eda-b6fc-f4b2eab307b5'
