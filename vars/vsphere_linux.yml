@@ -1,0 +1,6 @@
+#vars/vsphere_linux.yml
+
+#This vars file is just to populate variables that are specific
+#to Linux machines running on Vsphere.
+infra_callback_job_id: '90'
+infra_callback_uuid: '2a7288ca-c3ec-4eda-b6fc-f4b2eab307b5'
