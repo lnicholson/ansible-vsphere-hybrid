@@ -1,0 +1,5 @@
+#vars/windows-2019.yml
+#This vars file is just to populate variables that are specific
+#to Windows 2019 machines running on Vsphere.
+image_name: 'win2019'
+cloud_os: windows
