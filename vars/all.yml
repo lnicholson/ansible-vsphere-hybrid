@@ -1,0 +1,26 @@
+#Using an infile seperator to identify which variables apply to which original seperated playbook
+#Then will simply consolidate the variables in the combined code.
+
+## Build Vsphere variable objects (Windows)
+domain_user: ''
+gateway_ip: ''
+netmask: ''
+vm_cpu: 2
+vm_datacenter: ''
+vm_datastore: ''
+vm_disk_size: 40
+vm_disk_type: 'thin'
+vm_dns_server: ''
+vm_domain: ''
+vm_network: ''
+vm_ram: 4096
+vm_template: 'win2019'
+ansible_pass: ''
+tower_server: 'https://'
+bootstrap_callback_uuid: ''
+bootstrap_callback_job_id: ''
+fact_callback_uuid: ''
+fact_callback_job_id: ''
+userid: ''
+windows_vm_hostname: dryrun01
+ssh_ansible_awx: ""
