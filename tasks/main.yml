@@ -1,0 +1,26 @@
+---
+- hosts: localhost
+  gather_facts: False
+  vars_files:
+    - ../vars/{{ cloud_system }}.yml
+  tasks:
+    - import_tasks: provision.yml
+      when: cloud_os == "linux"
+
+- hosts: cloud_prep
+  gather_facts: false
+  vars:
+    infra_callback_uuid: ""
+    infra_callback_job_id: ""
+  tasks:
+    - import_tasks: post-provision.yml
+      when: cloud_os == "linux"
+
+- name: Create Windows VM
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/{{ cloud_system }}.yml
+  tasks:
+    - import_tasks: win-provision.yml
+      when: cloud_os == "windows"
