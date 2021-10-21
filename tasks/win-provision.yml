@@ -1,0 +1,60 @@
+---
+- name: "Include the vars files dynamically"
+  include_vars: "{{ item }}"
+  loop:
+    - ../vars/all.yml
+    - '../vars/vsphere_{{ cloud_os }}.yml'
+    - '../vars/{{ cloud_system }}.yml'
+
+- name: Create Windows VM from Template and Customize
+  vmware_guest:
+    datacenter: "{{ vm_datacenter }}"
+    validate_certs: False
+    folder: "/Demos"
+    name: "{{ instance_name }}"
+    state: poweredon
+    template: "{{ image_name }}"
+    disk:
+    - size_gb: "{{ vm_disk_size }}"
+      type: "{{ vm_disk_type }}"
+      datastore: "{{ vm_datastore }}"
+    hardware:
+      memory_mb: "{{ vm_ram }}"
+      num_cpus: "{{ vm_cpu }}"
+    networks:
+    - name: "{{ vm_network }}"
+      connected: yes
+      start_connected: True
+    customization:
+      autologon: True
+      hostname: "{{ instance_name }}"
+      password: "{{ win_vm_password }}"
+      timezone: 40
+      runonce:
+      - powershell.exe -command "$secureString = ConvertTo-SecureString '{{ automation_passw }}' -AsPlainText -Force" ; "New-LocalUser 'ansible-awx' -Password $secureString -FullName 'Ansible-Awx' -Description 'Ansible Automation'"
+      - powershell.exe -command "& Add-LocalGroupMember -Group 'Administrators' -Member 'ansible-awx'"
+      - powershell.exe -command "& $([scriptblock]::Create((New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1'))) -ForceNewSSLCert -EnableCredSSP"
+      - winrm set winrm/config/service/auth @{CredSSP="true"}
+      - powershell.exe -command "Start-Sleep -Seconds 60"
+      - "powershell.exe -command C:\\opt\\scripts\\request_tower_configuration.ps1 -k -s '{{ tower_server }}' -c '{{ bootstrap_callback_uuid }}' -t '{{ bootstrap_callback_job_id }}' -e '{ machine_class: \"{{ machine_class }}\", env: \"{{ env }}\", site: \"{{ site }}\", patch_on_provision: \"{{ patch_on_provision }}\" }'"
+      - "powershell.exe -command C:\\opt\\scripts\\request_tower_configuration.ps1 -k -s '{{ tower_server }}' -c '{{ fact_callback_uuid }}' -t '{{ fact_callback_job_id }}'"
+      - powershell.exe -command "Start-Sleep -Seconds 60"
+      - "powershell.exe -command C:\\opt\\scripts\\request_tower_configuration.ps1 -k -s '{{ tower_server }}' -c '{{ conf_callback_uuid }}' -t '{{ conf_callback_job_id }}'"
+    wait_for_ip_address: yes
+  ignore_errors: yes
+  delegate_to: localhost
+
+- name: Refresh the Vsphere Inventory
+  uri:
+    url: {{ tower_server }}/api/v2/inventory_sources/{{ inv_group_no }}/update/
+    validate_certs: no
+    method: POST
+    user: "{{ userid }}"
+    password: "{{ passw }}"
+    force_basic_auth: yes
+    status_code: [201,202]
+    body_format: json
+
+- name: Waiting for VM to complete first initilization
+  wait_for: timeout=300
+  delegate_to: localhost
