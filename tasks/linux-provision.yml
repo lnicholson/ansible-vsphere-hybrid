@@ -1,0 +1,70 @@
+---
+    - name: "Include a vars file"
+      include_vars: ../vars/all.yml
+
+    - name: Include OS specific variables
+      include_vars: "{{ item }}"
+      with_first_found:
+        - "../vars/vsphere_{{ instance_size }}.yml"
+      tags: vsphere_sizing
+
+    - name: Create Linux VM from Template and Customize
+      vmware_guest:
+        datacenter: "{{ vm_datacenter }}"
+        validate_certs: False
+        folder: "/Demos"
+        name: "{{ instance_name }}"
+        state: poweredon
+        template: "{{ image_name }}"
+        disk:
+        - size_gb: "{{ vm_disk_size }}"
+          type: "{{ vm_disk_type }}"
+          datastore: "{{ vm_datastore }}"
+        hardware:
+          memory_mb: "{{ vm_ram }}"
+          num_cpus: "{{ vm_cpu }}"
+        networks:
+        - name: "{{ vm_network }}"
+          start_connected: yes
+          connected: yes
+        wait_for_ip_address: true
+      ignore_errors: yes
+      delegate_to: localhost
+      register: auto_vm
+
+    - debug:
+        var: auto_vm
+        
+    - name: Add multiple virtual machine custom attributes
+      vmware_guest_custom_attributes:
+        moid: "{{ auto_vm.instance.moid }}"
+        state: present
+        attributes:
+        - name: machine_class
+          value: "{{ machine_class }}"
+        - name: env
+          value: "{{ env }}"
+        - name: site
+          value: "{{ site }}"
+      delegate_to: localhost
+      register: attributes
+      when: auto_vm is succeeded
+
+    - name: Refresh the Vsphere Inventory
+      uri:
+        url: {{ tower_server }}/api/v2/inventory_sources/{{ tower_vsphere_inv_no }}/update/
+        validate_certs: no
+        method: POST
+        user: "{{ userid }}"
+        password: "{{ passw }}"
+        force_basic_auth: yes
+        status_code: [201,202]
+        body_format: json
+      when: auto_vm is succeeded
+
+# We should add this freshly created host to a cloud initialize group of sorts
+    - name: Add host to group 'cloud_prep'.
+      add_host:
+        name: '{{ auto_vm.instance.ipv4 }}'
+        groups: cloud_prep
+      when: auto_vm is succeeded
