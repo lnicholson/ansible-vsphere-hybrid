@@ -46,7 +46,7 @@
 
 - name: Refresh the Vsphere Inventory
   uri:
-    url: {{ tower_server }}/api/v2/inventory_sources/{{ inv_group_no }}/update/
+    url: {{ tower_server }}/api/v2/inventory_sources/{{ tower_vsphere_inv_no }}/update/
     validate_certs: no
     method: POST
     user: "{{ userid }}"
