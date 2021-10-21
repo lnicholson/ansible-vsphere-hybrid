@@ -1,0 +1,68 @@
+###############################
+# VMWare Cloud Aware Pre-Requisite Setup
+
+### TODO - Check to see if this play is still needed. LN
+- name: "Cloud prep check"
+  shell: |
+    if [ -e "/opt/.cloudprep" ]
+    then
+      echo "true"
+    else
+      echo "false"
+    fi
+  register: cloudprepcheck
+
+- name: "Include a vars file"
+  include_vars: ../vars/all.yml
+
+- name: "Create Ansible Automation Account"
+  user:
+    name: ansible-awx
+    state: present
+    comment: "Ansible"
+    shell: "/bin/bash"
+    seuser: "unconfined_u"
+    uid: 1050
+    groups: wheel
+
+- name: "Make sure a custom facts directory is present"
+  file:
+    path: /etc/ansible/facts.d
+    state: directory
+
+- name: "Populate a custom facts file with automation metadata from VCenter"
+  template:
+    src: ../templates/automation.fact.j2
+    dest: /etc/ansible/facts.d/automation.fact
+    owner: root
+    group: root
+    mode: 444
+
+- name: "Place the Ansible SSH key for the Ansible Automation User Account"
+  authorized_key:
+    user: ansible-awx
+    state: present
+    key: "{{ ssh_ansible_awx }}"
+
+- name: "Enable the ansible-awx Ansible account for Sudo Permissions"
+  blockinfile:
+    path: "/etc/sudoers.d/ansible-awx"
+    block: |
+      ansible-awx ALL=(ALL) NOPASSWD: ALL
+      Defaults:ansible-awx !requiretty
+    state: present
+    mode: 0440
+    create: yes
+    validate: 'visudo -cf %s'
+
+- name: "Now collect the Automation Ready machine facts with the custom facts"
+  setup:
+
+- name: "Make sure Firewalld is disabled."
+  service:
+    name: firewalld
+    state: stopped
+    enabled: no
+
+- name: Initiate a callback to Tower for automation
+  shell: curl -k -d 'host_config_key={{ infra_callback_uuid }}' {{ tower_server }}:443/api/v2/job_templates/{{ infra_callback_job_id }}/callback/
